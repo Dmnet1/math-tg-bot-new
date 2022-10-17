@@ -1,13 +1,14 @@
 package tgbot
 
 import (
-	"encoding/xml"
+	"encoding/json"
+	"io"
 	"log"
 	"os"
 )
 
-func UnmarshalEquations() (Equations, error) { // поправил название
-	file, err := os.Open("types.xml")
+func UnmarshalEquations() ([]Equation, error) { // поправил название
+	file, err := os.Open("types.json")
 	if err != nil {
 		log.Panic(err)
 	} else {
@@ -16,23 +17,28 @@ func UnmarshalEquations() (Equations, error) { // поправил назван�
 
 	defer file.Close() // поставил сразу после открытия
 
-	fi, err := file.Stat()
+	/*fi, err := file.Stat()
+	if err != nil {
+		log.Panic(err)
+	}*/
+
+	fi, err := io.ReadAll(file)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	var data = make([]byte, fi.Size())
+	/*var data = make([]byte, fi.Size())
 	_, err = file.Read(data)
 	if err != nil {
 		log.Panic(err)
-	}
+	}*/
 
-	var v Equations
-	err = xml.Unmarshal(data, &v)
+	var result []Equation
+	err = json.Unmarshal(fi, &result)
 
 	if err != nil {
 		log.Println(err)
-		return v, err
+		return result, err
 	}
-	return v, nil
+	return result, nil
 }

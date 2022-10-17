@@ -2,7 +2,7 @@ package tgbot
 
 import (
 	"encoding/json"
-	"encoding/xml"
+	//"encoding/xml"
 	"fmt"
 	tgbotapi "gopkg.in/telegram-bot-api.v4"
 	"log"
@@ -16,17 +16,17 @@ type Config struct {
 	TelegramBotToken string
 }
 
-type Equations struct {
-	XMLName   xml.Name   `xml:"compendium"`
-	Equations []Equation `xml:"equation"`
-}
+/*type Equations struct {
+	JSONName      json.Name  `json:"compendium"`
+	Equations []Equation `json:"equation"`
+}*/
 
 type Equation struct {
-	XMLName     xml.Name `xml:"equation"`
-	Name        string   `xml:"name"`
-	Odds        string   `xml:"odds"`
-	GeneralForm string   `xml:"generalForm"`
-	SupportInfo []string `xml:"supportInfo"`
+	//JSONName     json.Name `json:"equation"`
+	Name        string `json:"name"`
+	Odds        string `json:"odds"`
+	GeneralForm string `json:"generalForm"`
+	SupportInfo string `json:"supportInfo"`
 }
 
 func TgBotApi() {
@@ -34,6 +34,9 @@ func TgBotApi() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer file.Close()
+
 	decoder := json.NewDecoder(file)
 	configuration := Config{}
 	err = decoder.Decode(&configuration)
@@ -68,7 +71,7 @@ func TgBotApi() {
 
 	for update := range updates {
 		query := update.Message.Text
-		filtered := Filter(equations.Equations, func(equation Equation) bool {
+		filtered := Filter(equations, func(equation Equation) bool {
 			return strings.Index(strings.ToLower(equation.Name), strings.ToLower(query)) >= 0
 		})
 
@@ -80,7 +83,7 @@ func TgBotApi() {
 		for _, equation := range filtered {
 			text := ""
 			for _, t := range equation.SupportInfo {
-				text = text + t + "\n"
+				text = text + string(t)
 			}
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s\n%s", equation.Name, text))
@@ -95,7 +98,7 @@ func TgBotApi() {
 		}
 
 		if query == "уравнения" {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s\n", equations.Equations))
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s\n", Equation{}))
 			bot.Send(msg)
 		}
 
