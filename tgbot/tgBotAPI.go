@@ -2,7 +2,6 @@ package tgbot
 
 import (
 	"encoding/json"
-	//"encoding/xml"
 	"fmt"
 	tgbotapi "gopkg.in/telegram-bot-api.v4"
 	"log"
@@ -16,17 +15,11 @@ type Config struct {
 	TelegramBotToken string
 }
 
-/*type Equations struct {
-	JSONName      json.Name  `json:"compendium"`
-	Equations []Equation `json:"equation"`
-}*/
-
 type Equation struct {
-	//JSONName     json.Name `json:"equation"`
-	Name        string `json:"name"`
-	Odds        string `json:"odds"`
-	GeneralForm string `json:"generalForm"`
-	SupportInfo string `json:"supportInfo"`
+	Name        string //`json:"name"`
+	Odds        string //`json:"odds"`
+	GeneralForm string //`json:"generalForm"`
+	SupportInfo string //`json:"supportInfo"`
 }
 
 func TgBotApi() {
@@ -75,9 +68,11 @@ func TgBotApi() {
 			return strings.Index(strings.ToLower(equation.Name), strings.ToLower(query)) >= 0
 		})
 
-		if len(filtered) == 0 && query != "/start" && query != "уравнения" && query != "a*x*x + b*x + c = 0" {
+		isUnknownQuery := len(filtered) == 0 && query != "/start" && query != "уравнения" && query != "a*x*x + b*x + c = 0"
+		if isUnknownQuery {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Попробуй еще разок!")
 			bot.Send(msg)
+			continue
 		}
 
 		for _, equation := range filtered {
@@ -97,20 +92,18 @@ func TgBotApi() {
 			bot.Send(msg)
 		}
 
-		if query == "уравнения" {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s\n", Equation{}))
-			bot.Send(msg)
-		}
-
-		if query == "/start" {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет! Это математический бот для решения разного вида уравнений. Для поиска интересующего вида уравнения отправь в чат: 'уравнение'. Все, что содержит данный запрос, будет выведено новым сообщением.")
-			bot.Send(msg)
-		}
-
 		var queryA, queryB, queryC, D float64
 		var notice string
+		var condition string
 
-		if query == "a*x*x + b*x + c = 0" {
+		switch query {
+		case "уравнения":
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s\n", Equation{}))
+			bot.Send(msg)
+		case "/start":
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет! Это математический бот для решения разного вида уравнений. Для поиска интересующего вида уравнения отправь в чат: 'уравнение'. Все, что содержит данный запрос, будет выведено новым сообщением.")
+			bot.Send(msg)
+		case "a*x*x + b*x + c = 0":
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Введите коэффициент 'a'")
 			bot.Send(msg)
 			notice = "GoToB"
@@ -118,7 +111,8 @@ func TgBotApi() {
 			for update := range updates {
 				query := update.Message.Text
 
-				if query != "" && notice == "GoToB" {
+				condition1 := query != "" && notice == "GoToB"
+				if condition1 {
 					query := update.Message.Text
 					queryA, err = strconv.ParseFloat(query, 64)
 
@@ -134,7 +128,8 @@ func TgBotApi() {
 				for update := range updates {
 					query := update.Message.Text
 
-					if query != "" && notice == "GoToC" {
+					condition2 := query != "" && notice == "GoToC"
+					if condition2 {
 						query := update.Message.Text
 						queryB, err = strconv.ParseFloat(query, 64)
 
@@ -150,7 +145,8 @@ func TgBotApi() {
 					for update := range updates {
 						query := update.Message.Text
 
-						if query != "" && notice == "GoToD" {
+						condition3 := query != "" && notice == "GoToD"
+						if condition3 {
 							query := update.Message.Text
 							queryC, err = strconv.ParseFloat(query, 64)
 
@@ -158,23 +154,23 @@ func TgBotApi() {
 								log.Printf("Ошибка при конвертации типа: \n%s", err)
 							}
 
-							if queryA != 0 && queryB != 0 && queryC != 0 {
+							switch condition {
+							case "queryA != 0 && queryB != 0 && queryC != 0":
 								D, notice, err = discriminant.Discriminant(queryA, queryB, queryC)
 
 								if err != nil {
 									log.Printf("Ошибка при расчете дискриминанта: \n%s", err)
 								}
-							}
 
-							if queryA != 0 && queryB != 0 && queryC != 0 {
+								//case "notice == 'GoToD'":
 								msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Дискриминант равен %f\n", D))
 								bot.Send(msg)
 								msg = tgbotapi.NewMessage(update.Message.Chat.ID, notice)
 								bot.Send(msg)
-							}
-							notice = "end"
 
-							if D > 0 && queryA != 0 && queryB != 0 && queryC != 0 {
+								notice = "end"
+
+							case "D > 0 && queryA != 0 && queryB != 0 && queryC != 0":
 								x1, x2, err := discriminant.X1X2(queryA, queryB, D)
 
 								if err != nil {
@@ -183,9 +179,8 @@ func TgBotApi() {
 
 								msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Корни уравнения: x1 = %f\n, x2 = %f\n", x1, x2))
 								bot.Send(msg)
-							}
 
-							if D == 0 && queryA != 0 && queryB != 0 && queryC != 0 {
+							case "D == 0 && queryA != 0 && queryB != 0 && queryC != 0":
 								x, err := discriminant.X(queryA, queryB)
 
 								if err != nil {
@@ -194,15 +189,13 @@ func TgBotApi() {
 
 								msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Корень уравнения: x = %f\n", x))
 								bot.Send(msg)
-							}
 
-							if queryA != 0 && queryB == 0 && queryC == 0 {
+							case "queryA != 0 && queryB == 0 && queryC == 0":
 								x := 0
 								msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Корень уравнения: x = %v\n", x))
 								bot.Send(msg)
-							}
 
-							if queryA != 0 && queryB == 0 && queryC != 0 {
+							case "queryA != 0 && queryB == 0 && queryC != 0":
 								x1, x2, err := discriminant.SpecialCase1(queryA, queryC)
 
 								if err != nil {
@@ -211,9 +204,8 @@ func TgBotApi() {
 
 								msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Корни уравнения:\n x1 = √%f\n x2 = -√%f\n", x1, x2)) // получается корень из отрицательного числа
 								bot.Send(msg)
-							}
 
-							if queryA != 0 && queryB != 0 && queryC == 0 {
+							case "queryA != 0 && queryB != 0 && queryC == 0":
 								x1, x2, err := discriminant.SpecialCase2(queryA, queryB)
 
 								if err != nil {
@@ -222,9 +214,8 @@ func TgBotApi() {
 
 								msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Корни уравнения:\n x1 = %f\n x2 = %f\n", x1, x2))
 								bot.Send(msg)
-							}
 
-							if queryA == 0 {
+							case "queryA == 0":
 								text := "При нулевом коэффициенте 'а' уравнение становится линейным. Воспользуйся командой 'a*x + b = 0' для решения данного типа уравнений."
 								msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
 								bot.Send(msg)

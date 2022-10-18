@@ -36,7 +36,7 @@ func SpecialCase1(queryA, queryC float64) (x1, x2 float64, err error) {
 	x1 = -(-queryC / queryA)
 	x2 = -queryC / queryA
 
-	return x1, -x2, err
+	return x1, -x2, nil
 }
 
 // Если коэффициент c = 0
@@ -44,5 +44,5 @@ func SpecialCase2(queryA, queryB float64) (x1, x2 float64, err error) {
 	x1 = 0
 	x2 = -queryB / queryA
 
-	return x1, x2, err
+	return x1, x2, nil
 }
