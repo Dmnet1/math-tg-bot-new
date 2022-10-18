@@ -16,17 +16,11 @@ type Config struct {
 	TelegramBotToken string
 }
 
-/*type Equations struct {
-	JSONName      json.Name  `json:"compendium"`
-	Equations []Equation `json:"equation"`
-}*/
-
 type Equation struct {
-	//JSONName     json.Name `json:"equation"`
-	Name        string `json:"name"`
-	Odds        string `json:"odds"`
-	GeneralForm string `json:"generalForm"`
-	SupportInfo string `json:"supportInfo"`
+	Name        string
+	Odds        string
+	GeneralForm string
+	SupportInfo string
 }
 
 func TgBotApi() {
@@ -124,6 +118,9 @@ func TgBotApi() {
 
 					if err != nil {
 						log.Printf("Ошибка при конвертации типа: \n%s", err)
+						msg := tgbotapi.NewMessage(update.Message.Chat.ID, "ошибка при вводе коэффициента")
+						bot.Send(msg)
+						break
 					}
 
 					msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Введите коэффициент 'b'")
@@ -140,6 +137,9 @@ func TgBotApi() {
 
 						if err != nil {
 							log.Printf("Ошибка при конвертации типа: \n%s", err)
+							msg := tgbotapi.NewMessage(update.Message.Chat.ID, "ошибка при вводе коэффициента")
+							bot.Send(msg)
+							break
 						}
 
 						msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Введите коэффициент 'c'")
@@ -156,6 +156,9 @@ func TgBotApi() {
 
 							if err != nil {
 								log.Printf("Ошибка при конвертации типа: \n%s", err)
+								msg := tgbotapi.NewMessage(update.Message.Chat.ID, "ошибка при вводе коэффициента")
+								bot.Send(msg)
+								break
 							}
 
 							if queryA != 0 && queryB != 0 && queryC != 0 {
@@ -163,18 +166,40 @@ func TgBotApi() {
 
 								if err != nil {
 									log.Printf("Ошибка при расчете дискриминанта: \n%s", err)
+									msg := tgbotapi.NewMessage(update.Message.Chat.ID, "ошибка при расчете дискриминанта")
+									bot.Send(msg)
+									break
 								}
-							}
 
-							if queryA != 0 && queryB != 0 && queryC != 0 {
 								msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Дискриминант равен %f\n", D))
 								bot.Send(msg)
 								msg = tgbotapi.NewMessage(update.Message.Chat.ID, notice)
 								bot.Send(msg)
 							}
-							notice = "end"
 
-							if D > 0 && queryA != 0 && queryB != 0 && queryC != 0 {
+							var resultD bool
+							switch resultD {
+							case D > 0 && queryA != 0 && queryB != 0 && queryC != 0:
+								x1, x2, err := discriminant.X1X2(queryA, queryB, D)
+
+								if err != nil {
+									log.Printf("Ошибка при вычислении корней уравнения: \n%s", err)
+								}
+
+								msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Корни уравнения: x1 = %f\n, x2 = %f\n", x1, x2))
+								bot.Send(msg)
+
+							case D == 0 && queryA != 0 && queryB != 0 && queryC != 0:
+								x, err := discriminant.X(queryA, queryB)
+
+								if err != nil {
+									log.Printf("Ошибка при вычислении корня уравнения: \n%s", err)
+								}
+
+								msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Корень уравнения: x = %f\n", x))
+								bot.Send(msg)
+							}
+							/*if D > 0 && queryA != 0 && queryB != 0 && queryC != 0 {
 								x1, x2, err := discriminant.X1X2(queryA, queryB, D)
 
 								if err != nil {
@@ -194,7 +219,7 @@ func TgBotApi() {
 
 								msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Корень уравнения: x = %f\n", x))
 								bot.Send(msg)
-							}
+							}*/
 
 							if queryA != 0 && queryB == 0 && queryC == 0 {
 								x := 0
