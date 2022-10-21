@@ -16,10 +16,10 @@ type Config struct {
 }
 
 type Equation struct {
-	Name        string //`json:"name"`
-	Odds        string //`json:"odds"`
-	GeneralForm string //`json:"generalForm"`
-	SupportInfo string //`json:"supportInfo"`
+	Name        string
+	Odds        string
+	GeneralForm string
+	SupportInfo string
 }
 
 func TgBotApi() {
@@ -154,7 +154,7 @@ func TgBotApi() {
 								log.Printf("Ошибка при конвертации типа: \n%s", err)
 							}
 
-							switch condition {
+							switch {
 							case "queryA != 0 && queryB != 0 && queryC != 0":
 								D, notice, err = discriminant.Discriminant(queryA, queryB, queryC)
 
