@@ -28,15 +28,59 @@ var notice string
 var update tgbotapi.Update
 var bot *tgbotapi.BotAPI
 
-func treatmentErrors(err error) {
-	if err != nil {
-		log.Printf("Ошибка при конвертации типа: \n%s", err)
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "ошибка при вводе коэффициента")
-		bot.Send(msg)
+func inputCoefficientA(updates tgbotapi.UpdatesChannel, notice string) (float64, string) {
+	var err error
+	for update := range updates {
+		query := update.Message.Text
+
+		if query != "" && notice == "GoToB" {
+			query := update.Message.Text
+			queryA, err = strconv.ParseFloat(query, 64)
+			treatmentErrors(err)
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Введите коэффициент 'b'")
+			bot.Send(msg)
+			notice = "GoToC"
+		}
+		inputCoefficientB(updates, "GoToC")
 	}
+	return queryA, notice
 }
 
-func findingD() {
+func inputCoefficientB(updates tgbotapi.UpdatesChannel, notice string) (float64, string) {
+	var err error
+	for update := range updates {
+		query := update.Message.Text
+		if query != "" && notice == "GoToC" {
+			query := update.Message.Text
+			queryB, err = strconv.ParseFloat(query, 64)
+			treatmentErrors(err)
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Введите коэффициент 'c'")
+			bot.Send(msg)
+			notice = "GoToD"
+		}
+		inputCoefficientC(updates, "GoToD")
+	}
+	return queryB, notice
+}
+
+func inputCoefficientC(updates tgbotapi.UpdatesChannel, notice string) (float64, string) {
+	var err error
+	for update := range updates {
+		query := update.Message.Text
+		if query != "" && notice == "GoToD" {
+			query := update.Message.Text
+			queryC, err = strconv.ParseFloat(query, 64)
+			treatmentErrors(err)
+		}
+		findingDiscriminant(queryA, queryB, queryC)
+		findingRootsOfEquation()
+	}
+	return queryC, notice
+}
+
+func findingDiscriminant(queryA, queryB, queryC float64) {
 	if queryA != 0 && queryB != 0 && queryC != 0 {
 		D, notice, err := discriminant.Discriminant(queryA, queryB, queryC)
 
@@ -103,6 +147,14 @@ func findingRootsOfEquation() {
 		}
 
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Корни уравнения5:\n x1 = %f\n x2 = %f\n", x1, x2))
+		bot.Send(msg)
+	}
+}
+
+func treatmentErrors(err error) {
+	if err != nil {
+		log.Printf("Ошибка при конвертации типа: \n%s", err)
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "ошибка при вводе коэффициента")
 		bot.Send(msg)
 	}
 }
@@ -189,48 +241,7 @@ func TgBotApi() {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Введите коэффициент 'a'")
 			bot.Send(msg)
 			notice = "GoToB"
-
-			for update := range updates {
-				query := update.Message.Text
-
-				if query != "" && notice == "GoToB" {
-					query := update.Message.Text
-					queryA, err = strconv.ParseFloat(query, 64)
-					treatmentErrors(err)
-
-					msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Введите коэффициент 'b'")
-					bot.Send(msg)
-					notice = "GoToC"
-				}
-
-				for update := range updates {
-					query := update.Message.Text
-
-					if query != "" && notice == "GoToC" {
-						query := update.Message.Text
-						queryB, err = strconv.ParseFloat(query, 64)
-						treatmentErrors(err)
-
-						msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Введите коэффициент 'c'")
-						bot.Send(msg)
-						notice = "GoToD"
-					}
-
-					for update := range updates {
-						query := update.Message.Text
-
-						if query != "" && notice == "GoToD" {
-							query := update.Message.Text
-							queryC, err = strconv.ParseFloat(query, 64)
-							treatmentErrors(err)
-						}
-					}
-					findingD()
-					findingRootsOfEquation()
-				}
-				break
-			}
-			break
+			inputCoefficientA(updates, "GoToB")
 		}
 		break
 	}
